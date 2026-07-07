@@ -27,7 +27,13 @@ export async function GET(
     (p) => now - p.lastSeen < IDLE_TIMEOUT_MS,
   );
   if (active.length !== room.players.length) {
+    // If the host went idle, pass the crown to the longest-standing player.
+    const hostWasSeated = room.players.some((p) => p.id === room.adminId);
+    const hostStillSeated = active.some((p) => p.id === room.adminId);
     room.players = active;
+    if (hostWasSeated && !hostStillSeated && active.length > 0) {
+      room.adminId = active[0].id;
+    }
     dirty = true;
   }
 

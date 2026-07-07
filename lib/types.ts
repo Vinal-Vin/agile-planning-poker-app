@@ -21,6 +21,8 @@ export interface Room {
   deck: DeckId;
   story: string;
   revealed: boolean;
+  /** The host: the player who created the room. Only they can reveal, reset, and set the story. */
+  adminId: string;
   players: Player[];
   reactions: Reaction[];
   round: number;
@@ -41,6 +43,7 @@ export interface PublicRoom {
   deck: DeckId;
   story: string;
   revealed: boolean;
+  adminId: string;
   players: PublicPlayer[];
   reactions: Reaction[];
   round: number;
@@ -52,6 +55,7 @@ export function toPublicRoom(room: Room): PublicRoom {
     deck: room.deck,
     story: room.story,
     revealed: room.revealed,
+    adminId: room.adminId,
     round: room.round,
     reactions: room.reactions,
     players: room.players.map((p) => ({

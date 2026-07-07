@@ -227,6 +227,9 @@ export function RoomClient({ roomId }: { roomId: string }) {
   const iVoted = me?.hasVoted ?? false;
   const votedCount = room.players.filter((p) => p.hasVoted).length;
   const story = storyDraft ?? room.story;
+  const isHost = room.adminId === playerId;
+  const host = room.players.find((p) => p.id === room.adminId);
+  const hostName = host ? `${host.avatar} ${host.name}` : "the host";
 
   return (
     <Shell>
@@ -251,24 +254,36 @@ export function RoomClient({ roomId }: { roomId: string }) {
         </div>
       </header>
 
-      {/* Story */}
+      {/* Story — only the host can edit it */}
       <div className="mx-auto mt-6 w-full max-w-xl">
-        <input
-          value={story}
-          onChange={(e) => setStoryDraft(e.target.value)}
-          onBlur={() => {
-            if (storyDraft !== null && storyDraft !== room.story) {
-              void action("story", { story: storyDraft });
-            }
-            setStoryDraft(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-          }}
-          maxLength={200}
-          placeholder="✏️ What are we estimating? (type a story or ticket)"
-          className="w-full rounded-2xl bg-white/10 px-4 py-3 text-center text-lg font-bold ring-1 ring-white/15 outline-none placeholder:text-violet-300 focus:ring-2 focus:ring-fuchsia-400"
-        />
+        {isHost ? (
+          <input
+            value={story}
+            onChange={(e) => setStoryDraft(e.target.value)}
+            onBlur={() => {
+              if (storyDraft !== null && storyDraft !== room.story) {
+                void action("story", { story: storyDraft });
+              }
+              setStoryDraft(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
+            maxLength={200}
+            placeholder="✏️ What are we estimating? (type a story or ticket)"
+            className="w-full rounded-2xl bg-white/10 px-4 py-3 text-center text-lg font-bold ring-1 ring-white/15 outline-none placeholder:text-violet-300 focus:ring-2 focus:ring-fuchsia-400"
+          />
+        ) : (
+          <div className="w-full rounded-2xl bg-white/10 px-4 py-3 text-center text-lg font-bold ring-1 ring-white/15">
+            {room.story ? (
+              room.story
+            ) : (
+              <span className="text-violet-300">
+                Waiting for {hostName} 👑 to set the story…
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -285,29 +300,36 @@ export function RoomClient({ roomId }: { roomId: string }) {
               player={p}
               revealed={room.revealed}
               isMe={p.id === playerId}
+              isHost={p.id === room.adminId}
             />
           ))}
         </div>
 
-        {/* Table actions */}
+        {/* Table actions — only the host controls the round */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          {!room.revealed ? (
-            <button
-              type="button"
-              onClick={() => action("reveal")}
-              disabled={votedCount === 0}
-              className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-amber-950 shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
-            >
-              Reveal cards 👀
-            </button>
+          {isHost ? (
+            !room.revealed ? (
+              <button
+                type="button"
+                onClick={() => action("reveal")}
+                disabled={votedCount === 0}
+                className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-amber-950 shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
+              >
+                Reveal cards 👀
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => action("reset")}
+                className="rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 px-6 py-3 font-black text-emerald-950 shadow-lg transition hover:scale-105 active:scale-95"
+              >
+                New round 🔄
+              </button>
+            )
           ) : (
-            <button
-              type="button"
-              onClick={() => action("reset")}
-              className="rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 px-6 py-3 font-black text-emerald-950 shadow-lg transition hover:scale-105 active:scale-95"
-            >
-              New round 🔄
-            </button>
+            <span className="rounded-2xl bg-white/5 px-4 py-2 text-sm font-bold text-violet-200 ring-1 ring-white/10">
+              👑 {hostName} {room.revealed ? "starts the next round" : "flips the cards"}
+            </span>
           )}
           <span className="text-sm font-bold text-violet-300">
             {votedCount}/{room.players.length} voted

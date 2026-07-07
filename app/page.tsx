@@ -38,11 +38,13 @@ export default function Home() {
     try {
       const profile = { name: name.trim() || sillyName(), avatar };
       saveProfile(profile);
-      const { id } = await apiPost<{ id: string }>("/api/rooms", { deck });
-      await apiPost(`/api/rooms/${id}/join`, {
-        playerId: getPlayerId(),
-        ...profile,
+      const playerId = getPlayerId();
+      // Creating the room makes you its host 👑
+      const { id } = await apiPost<{ id: string }>("/api/rooms", {
+        deck,
+        playerId,
       });
+      await apiPost(`/api/rooms/${id}/join`, { playerId, ...profile });
       router.push(`/room/${id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");

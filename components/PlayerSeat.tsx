@@ -6,10 +6,12 @@ export function PlayerSeat({
   player,
   revealed,
   isMe,
+  isHost,
 }: {
   player: PublicPlayer;
   revealed: boolean;
   isMe: boolean;
+  isHost: boolean;
 }) {
   return (
     <div className="flex w-20 animate-pop-in flex-col items-center gap-1.5 sm:w-24">
@@ -36,7 +38,18 @@ export function PlayerSeat({
           </div>
         )}
       </div>
-      <div className="text-2xl leading-none">{player.avatar}</div>
+      <div className="relative text-2xl leading-none">
+        {player.avatar}
+        {isHost && (
+          <span
+            className="absolute -right-3 -top-3 rotate-12 text-base drop-shadow"
+            title="Room host"
+            aria-label="Room host"
+          >
+            👑
+          </span>
+        )}
+      </div>
       <div
         className={`w-full truncate text-center text-xs font-bold ${
           isMe ? "text-fuchsia-300" : "text-violet-100"

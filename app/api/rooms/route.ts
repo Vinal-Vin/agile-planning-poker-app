@@ -10,6 +10,8 @@ export async function POST(req: Request) {
   const deck = body.deck as DeckId;
   if (!DECKS[deck]) return jsonError(400, "Invalid deck");
   const story = typeof body.story === "string" ? body.story.slice(0, 200) : "";
+  // The creator becomes the host; if omitted, the first player to join claims it.
+  const adminId = typeof body.playerId === "string" ? body.playerId : "";
 
   const store = getStore();
   let id = roomCode();
@@ -21,6 +23,7 @@ export async function POST(req: Request) {
     deck,
     story,
     revealed: false,
+    adminId,
     players: [],
     reactions: [],
     round: 1,

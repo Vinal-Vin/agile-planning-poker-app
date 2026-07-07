@@ -39,5 +39,7 @@ export async function POST(
       vote: null,
       lastSeen: Date.now(),
     });
+    // Legacy rooms / direct API use: first player to join becomes the host.
+    if (!room.adminId) room.adminId = playerId;
   });
 }

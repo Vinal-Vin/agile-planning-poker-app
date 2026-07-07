@@ -9,6 +9,9 @@ confetti when the team reaches consensus. 🎉
 
 - **Real-time rooms** — share a human-friendly room code like `brave-otter-42`;
   everyone votes from their own device and cards reveal simultaneously.
+- **Host role** — the room creator wears the crown 👑: only they can reveal
+  the cards, start new rounds, and set the story/ticket being estimated. If
+  the host leaves, the crown passes to the longest-seated player.
 - **Two decks** — Fibonacci (0–21, ?, ☕) and T-shirt sizes (XS–XXL, ?, ☕).
 - **Fun extras** — 3D card-flip reveal, emoji reactions that float across every
   screen, auto-generated names like "Sneaky Waffle", and post-reveal stats
