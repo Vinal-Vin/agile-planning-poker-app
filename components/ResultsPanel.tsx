@@ -100,38 +100,30 @@ export function ResultsPanel({
           <StatTile label="Highest" value={stats.max ?? "—"} />
         </div>
 
-        {/* Vote distribution */}
-        <div className="mt-4 space-y-2.5">
+        {/* Vote distribution — voter names, then the value, then the bar */}
+        <div className="mt-4 space-y-1.5">
           {stats.distribution.map(({ card, count }) => {
             const voters = room.players.filter((p) => p.vote === card);
+            const names = voters.map((p) => `${p.avatar} ${p.name}`).join(", ");
             return (
-              <div key={card} className="flex items-start gap-2">
-                <span className="w-9 shrink-0 pt-0.5 text-right text-sm font-black">
+              <div key={card} className="flex items-center gap-2">
+                <span
+                  className="w-32 shrink-0 truncate text-right text-xs font-bold text-violet-100 sm:w-40"
+                  title={names}
+                >
+                  {names}
+                </span>
+                <span className="w-8 shrink-0 text-center text-sm font-black">
                   {card}
                 </span>
-                <div className="flex-1">
-                  <div className="h-5 overflow-hidden rounded-md bg-white/5">
-                    <div
-                      className="animate-grow-bar flex h-full items-center justify-end rounded-md bg-violet-400/80 pr-1.5"
-                      style={{ width: `${(count / maxCount) * 100}%` }}
-                    >
-                      <span className="text-[11px] font-black text-violet-950">
-                        {count}
-                      </span>
-                    </div>
-                  </div>
-                  {/* Who voted this way */}
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {voters.map((p) => (
-                      <span
-                        key={p.id}
-                        className="inline-flex max-w-full items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-bold text-violet-100 ring-1 ring-white/10"
-                        title={p.name}
-                      >
-                        <span className="leading-none">{p.avatar}</span>
-                        <span className="max-w-[7rem] truncate">{p.name}</span>
-                      </span>
-                    ))}
+                <div className="h-5 flex-1 overflow-hidden rounded-md bg-white/5">
+                  <div
+                    className="animate-grow-bar flex h-full items-center justify-end rounded-md bg-violet-400/80 pr-1.5"
+                    style={{ width: `${(count / maxCount) * 100}%` }}
+                  >
+                    <span className="text-[11px] font-black text-violet-950">
+                      {count}
+                    </span>
                   </div>
                 </div>
               </div>
