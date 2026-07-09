@@ -22,7 +22,13 @@ function fireConfetti() {
   );
 }
 
-export function ResultsPanel({ room }: { room: PublicRoom }) {
+export function ResultsPanel({
+  room,
+  onClose,
+}: {
+  room: PublicRoom;
+  onClose: () => void;
+}) {
   const stats = useMemo(() => computeStats(room), [room]);
   const deck = DECKS[room.deck];
   const celebratedRound = useRef<number | null>(null);
@@ -34,47 +40,104 @@ export function ResultsPanel({ room }: { room: PublicRoom }) {
     }
   }, [stats, room.round]);
 
+  // Close on Escape and lock background scroll while the popup is open.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
   if (!stats) return null;
   const maxCount = Math.max(...stats.distribution.map((d) => d.count));
 
   return (
-    <div className="animate-pop-in mx-auto w-full max-w-xl rounded-3xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur">
-      {/* Vibe headline */}
-      <div className="flex items-center gap-3">
-        <span className="text-4xl">{stats.vibe.emoji}</span>
-        <p className="text-lg font-extrabold">{stats.vibe.message}</p>
-      </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Round results"
+    >
+      {/* Dimmed, blurred backdrop — click to dismiss */}
+      <button
+        type="button"
+        aria-label="Close results"
+        onClick={onClose}
+        className="animate-fade-in absolute inset-0 cursor-default bg-indigo-950/70 backdrop-blur-sm"
+      />
 
-      {/* Stat tiles */}
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        {deck.numeric ? (
-          <StatTile label="Average" value={stats.average ?? "—"} />
-        ) : (
-          <StatTile label="Most picked" value={stats.mode ?? "—"} />
-        )}
-        <StatTile label="Lowest" value={stats.min ?? "—"} />
-        <StatTile label="Highest" value={stats.max ?? "—"} />
-      </div>
+      {/* The popup card */}
+      <div className="animate-pop-in relative z-10 max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-indigo-950/95 p-5 shadow-2xl shadow-black/40 ring-1 ring-white/15">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close results"
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-lg font-black ring-1 ring-white/15 transition hover:scale-110 hover:bg-white/20 active:scale-95"
+        >
+          ✕
+        </button>
 
-      {/* Vote distribution */}
-      <div className="mt-4 space-y-1.5">
-        {stats.distribution.map(({ card, count }) => (
-          <div key={card} className="flex items-center gap-2">
-            <span className="w-9 shrink-0 text-right text-sm font-black">
-              {card}
-            </span>
-            <div className="h-5 flex-1 overflow-hidden rounded-md bg-white/5">
-              <div
-                className="animate-grow-bar flex h-full items-center justify-end rounded-md bg-violet-400/80 pr-1.5"
-                style={{ width: `${(count / maxCount) * 100}%` }}
-              >
-                <span className="text-[11px] font-black text-violet-950">
-                  {count}
+        {/* Vibe headline */}
+        <div className="flex items-center gap-3 pr-10">
+          <span className="text-4xl">{stats.vibe.emoji}</span>
+          <p className="text-lg font-extrabold">{stats.vibe.message}</p>
+        </div>
+
+        {/* Stat tiles */}
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+          {deck.numeric ? (
+            <StatTile label="Average" value={stats.average ?? "—"} />
+          ) : (
+            <StatTile label="Most picked" value={stats.mode ?? "—"} />
+          )}
+          <StatTile label="Lowest" value={stats.min ?? "—"} />
+          <StatTile label="Highest" value={stats.max ?? "—"} />
+        </div>
+
+        {/* Vote distribution */}
+        <div className="mt-4 space-y-2.5">
+          {stats.distribution.map(({ card, count }) => {
+            const voters = room.players.filter((p) => p.vote === card);
+            return (
+              <div key={card} className="flex items-start gap-2">
+                <span className="w-9 shrink-0 pt-0.5 text-right text-sm font-black">
+                  {card}
                 </span>
+                <div className="flex-1">
+                  <div className="h-5 overflow-hidden rounded-md bg-white/5">
+                    <div
+                      className="animate-grow-bar flex h-full items-center justify-end rounded-md bg-violet-400/80 pr-1.5"
+                      style={{ width: `${(count / maxCount) * 100}%` }}
+                    >
+                      <span className="text-[11px] font-black text-violet-950">
+                        {count}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Who voted this way */}
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {voters.map((p) => (
+                      <span
+                        key={p.id}
+                        className="inline-flex max-w-full items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-bold text-violet-100 ring-1 ring-white/10"
+                        title={p.name}
+                      >
+                        <span className="leading-none">{p.avatar}</span>
+                        <span className="max-w-[7rem] truncate">{p.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

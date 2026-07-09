@@ -38,6 +38,11 @@ export function RoomClient({ roomId }: { roomId: string }) {
   // Story editing
   const [storyDraft, setStoryDraft] = useState<string | null>(null);
 
+  // Results popup — opens automatically when cards are revealed for a round,
+  // and can be dismissed / reopened without leaving the round.
+  const [showResults, setShowResults] = useState(false);
+  const shownResultsRound = useRef<number | null>(null);
+
   const join = useCallback(
     async (name: string, avatar: string) => {
       const id = getPlayerId();
@@ -97,6 +102,19 @@ export function RoomClient({ roomId }: { roomId: string }) {
       clearInterval(interval);
     };
   }, [phase, playerId, roomId]);
+
+  // Pop the results open once per reveal; close them when a new round starts.
+  useEffect(() => {
+    if (room?.revealed) {
+      if (shownResultsRound.current !== room.round) {
+        shownResultsRound.current = room.round;
+        setShowResults(true);
+      }
+    } else {
+      shownResultsRound.current = null;
+      setShowResults(false);
+    }
+  }, [room?.revealed, room?.round]);
 
   async function action(path: string, body?: Record<string, unknown>) {
     try {
@@ -331,17 +349,24 @@ export function RoomClient({ roomId }: { roomId: string }) {
               👑 {hostName} {room.revealed ? "starts the next round" : "flips the cards"}
             </span>
           )}
+          {room.revealed && !showResults && (
+            <button
+              type="button"
+              onClick={() => setShowResults(true)}
+              className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-black ring-1 ring-white/15 transition hover:scale-105 hover:bg-white/20 active:scale-95"
+            >
+              📊 See results
+            </button>
+          )}
           <span className="text-sm font-bold text-violet-300">
             {votedCount}/{room.players.length} voted
           </span>
         </div>
       </div>
 
-      {/* Results */}
-      {room.revealed && (
-        <div className="mt-6">
-          <ResultsPanel room={room} />
-        </div>
+      {/* Results popup */}
+      {room.revealed && showResults && (
+        <ResultsPanel room={room} onClose={() => setShowResults(false)} />
       )}
 
       {error && (

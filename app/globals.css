@@ -76,6 +76,16 @@ body {
   animation: wiggle 1.6s ease-in-out infinite;
 }
 
+/* --- Backdrop fade-in for the results popup --- */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+
 /* --- Distribution bar grow-in --- */
 @keyframes grow-bar {
   from {
