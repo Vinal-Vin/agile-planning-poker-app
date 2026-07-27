@@ -78,6 +78,22 @@ export function RoomClient({ roomId }: { roomId: string }) {
     }
   }, [join]);
 
+  // Self-heal: if the server pruned us while the tab was asleep, quietly take
+  // our seat back with the saved profile. The ref stops a slow join from being
+  // re-fired on every poll tick.
+  const rejoiningRef = useRef(false);
+  const rejoin = useCallback(async () => {
+    if (rejoiningRef.current) return;
+    const profile = loadProfile();
+    if (!profile) return;
+    rejoiningRef.current = true;
+    try {
+      await join(profile.name, profile.avatar);
+    } finally {
+      rejoiningRef.current = false;
+    }
+  }, [join]);
+
   // Poll room state.
   useEffect(() => {
     if (phase !== "playing" || !playerId) return;
@@ -88,6 +104,7 @@ export function RoomClient({ roomId }: { roomId: string }) {
         if (!cancelled) {
           setRoom(room);
           setMyVote(yourVote);
+          if (!room.players.some((p) => p.id === playerId)) void rejoin();
         }
       } catch (e) {
         if (!cancelled && e instanceof ApiError && e.status === 404) {
@@ -96,12 +113,20 @@ export function RoomClient({ roomId }: { roomId: string }) {
         // Transient network errors: keep polling.
       }
     };
+    void tick();
     const interval = setInterval(tick, POLL_MS);
+    // Hidden tabs throttle timers, so poll immediately on refocus — this both
+    // refreshes our heartbeat and triggers the rejoin path if we were pruned.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [phase, playerId, roomId]);
+  }, [phase, playerId, roomId, rejoin]);
 
   // Pop the results open once per reveal; close them when a new round starts.
   useEffect(() => {
@@ -128,6 +153,9 @@ export function RoomClient({ roomId }: { roomId: string }) {
     } catch (e) {
       if (e instanceof ApiError && e.status === 404 && e.message.includes("expired")) {
         setPhase("expired");
+      } else if (e instanceof ApiError && e.status === 404) {
+        // "You're not in this room" — we were pruned; take our seat back.
+        void rejoin();
       } else {
         setError(e instanceof Error ? e.message : "Something went wrong");
       }

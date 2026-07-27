@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis";
-import type { Room } from "./types";
+import { normalizeRoom, type Room } from "./types";
 
 const ROOM_TTL_SECONDS = 60 * 60 * 24; // 24h
 
@@ -23,7 +23,8 @@ class RedisStore implements RoomStore {
   }
 
   async get(id: string): Promise<Room | null> {
-    return (await this.redis.get<Room>(`room:${id}`)) ?? null;
+    const room = await this.redis.get<Room>(`room:${id}`);
+    return room ? normalizeRoom(room) : null;
   }
 
   async set(id: string, room: Room): Promise<void> {
@@ -46,7 +47,7 @@ class MemoryStore implements RoomStore {
       this.rooms.delete(id);
       return null;
     }
-    return entry.room;
+    return normalizeRoom(entry.room);
   }
 
   async set(id: string, room: Room): Promise<void> {

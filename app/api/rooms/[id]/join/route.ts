@@ -26,20 +26,26 @@ export async function POST(
     if (existing) {
       existing.name = name;
       existing.avatar = avatar;
-      existing.lastSeen = Date.now();
-      return;
+    } else {
+      if (room.players.length >= MAX_PLAYERS) {
+        return jsonError(409, "Room is full (20 players max)");
+      }
+      room.players.push({
+        id: playerId,
+        name,
+        avatar,
+        vote: null,
+        lastSeen: Date.now(),
+      });
     }
-    if (room.players.length >= MAX_PLAYERS) {
-      return jsonError(409, "Room is full (20 players max)");
+    if (playerId === room.originalAdminId) {
+      // The room's creator reclaims the crown on return.
+      room.adminId = playerId;
+    } else if (!room.players.some((p) => p.id === room.adminId)) {
+      // The host is long gone (or the room predates hosts): promote the joiner
+      // so the room stays usable.
+      room.adminId = playerId;
+      room.originalAdminId ||= playerId;
     }
-    room.players.push({
-      id: playerId,
-      name,
-      avatar,
-      vote: null,
-      lastSeen: Date.now(),
-    });
-    // Legacy rooms / direct API use: first player to join becomes the host.
-    if (!room.adminId) room.adminId = playerId;
   });
 }
