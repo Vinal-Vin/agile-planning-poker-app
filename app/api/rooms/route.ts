@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     story,
     revealed: false,
     adminId,
+    originalAdminId: adminId,
     players: [],
     reactions: [],
     round: 1,

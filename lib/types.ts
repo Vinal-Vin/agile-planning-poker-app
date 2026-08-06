@@ -21,12 +21,20 @@ export interface Room {
   deck: DeckId;
   story: string;
   revealed: boolean;
-  /** The host: the player who created the room. Only they can reveal, reset, and set the story. */
+  /** The host: only they can reveal, reset, and set the story. May be temporarily reassigned if the creator vanishes. */
   adminId: string;
+  /** The room creator. Reclaims the crown (adminId) whenever they rejoin. */
+  originalAdminId: string;
   players: Player[];
   reactions: Reaction[];
   round: number;
   createdAt: number;
+}
+
+/** Backfill fields added after launch for rooms already stored in Redis. */
+export function normalizeRoom(room: Room): Room {
+  room.originalAdminId ??= room.adminId;
+  return room;
 }
 
 /** Room state as sent to clients — votes are masked while hidden. */

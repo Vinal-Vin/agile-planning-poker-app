@@ -21,6 +21,5 @@ export async function POST(
     if (!player) return jsonError(404, "You're not in this room — rejoin");
     // Tapping the selected card again clears the vote.
     player.vote = player.vote === vote ? null : vote;
-    player.lastSeen = Date.now();
   });
 }
