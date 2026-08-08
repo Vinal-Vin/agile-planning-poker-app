@@ -100,8 +100,18 @@ export function ResultsPanel({
           <StatTile label="Highest" value={stats.max ?? "—"} />
         </div>
 
+        {/* Column legend: distinguishes "Card" (the value) from "Votes" (the tally) */}
+        <div
+          className="mt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-violet-300/60"
+          aria-hidden="true"
+        >
+          <span className="w-32 shrink-0 sm:w-40" />
+          <span className="w-9 shrink-0 text-center">Card</span>
+          <span className="flex-1 pr-1.5 text-right">Votes</span>
+        </div>
+
         {/* Vote distribution — voter names, then the value, then the bar */}
-        <div className="mt-4 space-y-1.5">
+        <div className="mt-1.5 space-y-1.5">
           {stats.distribution.map(({ card, count }) => {
             const voters = room.players.filter((p) => p.vote === card);
             const names = voters.map((p) => `${p.avatar} ${p.name}`).join(", ");
@@ -113,7 +123,7 @@ export function ResultsPanel({
                 >
                   {names}
                 </span>
-                <span className="w-8 shrink-0 text-center text-sm font-black">
+                <span className="flex w-9 shrink-0 items-center justify-center rounded-md bg-white px-1 py-0.5 text-xs font-black text-violet-900 shadow-sm ring-1 ring-violet-200">
                   {card}
                 </span>
                 <div className="h-5 flex-1 overflow-hidden rounded-md bg-white/5">
@@ -123,6 +133,7 @@ export function ResultsPanel({
                   >
                     <span className="text-[11px] font-black text-violet-950">
                       {count}
+                      <span className="sr-only"> {count === 1 ? "vote" : "votes"}</span>
                     </span>
                   </div>
                 </div>
